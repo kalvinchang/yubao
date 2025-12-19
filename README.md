@@ -21,3 +21,4 @@ To get the original videos:
 * Paste the code in ```download_video.js``` into the browser's JavaScript code console
     * The script will click the buttons on the page to download the videos
 * Extract audio from video: ```./mp4_to_wav.sh``` (change the directory where you downloaded the videos)
+    * Make sure ffmpeg is installed
