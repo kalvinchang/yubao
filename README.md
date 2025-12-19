@@ -15,10 +15,13 @@ In case you want the latest version of yubao's site dataset:
 * ```python crawl.py EMAIL PASSWORD SAVE_DIRECTORY```
 
 ### Video data
-To get the original videos:
-* Using Chrome, log into the website and manually go to a site
+To get the original videos for a site (SITE_ID):
+* Using Chrome, log into the website and manually go to a site (https://zhongguoyuyan.cn/point/SITE_ID)
 * Inspect Element to open the JavaScript code console
 * Paste the code in ```download_video.js``` into the browser's JavaScript code console
     * The script will click the buttons on the page to download the videos
 * Extract audio from video: ```./mp4_to_wav.sh``` (change the directory where you downloaded the videos)
     * Make sure ffmpeg is installed
+* Uploading to HuggingFace: ```python huggingface.py''' (replace the directory where you downloaded the videos)
+
+Warning: Scraping videos takes a while because of the delay between downloading successive videos, which is why we only downloaded a subset of the videos
