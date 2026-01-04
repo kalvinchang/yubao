@@ -54,4 +54,33 @@ Warning: Scraping videos takes a while because of the delay between downloading 
 * Extract audio from video: ```./mp4_to_wav.sh``` (change the directory where you downloaded the videos)
     * Make sure ffmpeg is installed (https://github.com/espnet/espnet/blob/master/tools/installers/install_ffmpeg.sh)
 
-Warning: Scraping videos takes a while because of the delay between downloading successive videos, which is why we only downloaded a subset of the videos
+### Assembling the retrieval dataset
+Next, we create lhotse CutSets that will be loaded during retrieval
+
+* ```mkdir scraped```
+    * Then move the audio to ```scraped```
+* ```mkdir cutsets```
+    * This is where the lhotse CutSets will be stored
+* ```python assemble_bench.py --audio_dir scraped --hf_cache_dir /path/to/your/hf_cache``
+
+
+### Running speech-to-speech retrieval
+* ```retrieval.sh'''
+    * replace with your model path
+    * add code to load your model embeddingss here
+
+
+## Site metadata
+In case you want the latest version of yubao's site metadata:
+* Install dependencies (```pip install ddddocr pandas retrying```)
+* ```python crawl.py EMAIL PASSWORD SAVE_DIRECTORY```
+    * This will save metadata from each site
+    * We adapted https://github.com/lernanto/sincomp's crawler
+* Uploading to HuggingFace: ```python huggingface.py``` (replace the directory where you downloaded the metadata)
+* Beware of duplicate site names - one possible solution is to manually rename some of the cities (as we have suggested in parentheses)
+    * 江西_上饶市_广丰区: 18356, 18E30 (江西_上饶市_广丰区_min)
+    * 浙江_温州_苍南: 08F60, 08K12 (浙江_温州_苍南_min)
+    * 海南_三亚市_崖州区: 23J20, 23D67 (海南_三亚市_崖州区_min), 23C56
+    * 福建_宁德_霞浦: 02545, 02A15 (福建_宁德_霞浦_min)
+    * 福建_南平_浦城: 02A12 (福建_南平_浦城_min), 02G42
+    * 海南_（无）_东方市: 23C84 (海南_（无）_东方市_min), 23J18
