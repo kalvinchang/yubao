@@ -31,9 +31,13 @@ We release the metadata for all Chinese dialects sites at:
 * Video metadata (dialect transcript, Mandarin translation, IPA, English translation): https://huggingface.co/datasets/kalbin/yubao_videos
 
 ## Retrieval benchmark
-To create the retrieval dataset, you must first download the videos, extract the audio, and then assemble the retrieval dataset.
+To create the retrieval dataset, you must first download the metadata and videos, extract the audio, and then assemble the retrieval dataset.
 
 * ```pip install -r requirements.txt```
+* ```bash
+    export HF_HUB_CACHE="/path/to/your/hf_cache
+    hf download kalbin/yubao_sites
+  ```
 
 ### Downloading the videos
 * Create account on zhongguoyuyan.cn (you will need a Chinese phone number)
