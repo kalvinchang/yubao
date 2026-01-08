@@ -73,17 +73,58 @@ trg_emb: List[Tensor[T2, D]] of length N
 """
 def retrieve_most_similar_utterance(src_utt_emb, trg_utt_emb):
     assert len(src_utt_emb) == len(trg_utt_emb)
-    N = len(src_utt_emb)
-    utt_similarity_matrix = torch.zeros((N, N))
+    N_aligned_utt = len(src_utt_emb)
+    utt_similarity_matrix = torch.zeros((N_aligned_utt, N_aligned_utt))
 
     # for all pairs of utterances (not aligned), measure the sequence similarity
-    for src_idx in range(N):
-        for trg_idx in range(N):
+    for src_idx in range(N_aligned_utt):
+        for trg_idx in range(N_aligned_utt):
             utt_similarity_matrix[src_idx][trg_idx] = seq_sim(src_utt_emb[src_idx], trg_utt_emb[trg_idx])
 
     # for each source utterance, find the target utterance with the highest similarity to the current utterance
+    # could technically be extended to support more items being retrieved. for now, we retrieve the top
     most_similar_utterance = torch.argsort(utt_similarity_matrix, dim=1)[:, -1:]
     return most_similar_utterance
+
+
+"""
+Cross-lingual speech-to-speech retrieval performance for one pair of language varieties (languages or dialects)
+
+Assumes variety_A_loader, variety_B_loader are semantically aligned
+i.e. for index i, variety_A_loader[i] and variety_B_loader[i] have the same meaning
+"""
+@torch.no_grad
+def retrieval(model, variety_A_loader, variety_B_loader, device, cfg):
+    embed_A, embed_B = [], []
+    for utt_A, utt_B in tqdm(zip(variety_A_loader, variety_B_loader)):
+        num_frames_A, num_frames_B = utt_A["supervisions"]["num_frames"].to(device), utt_B["supervisions"]["num_frames"].to(device)
+        feats_A, feats_B = utt_A["inputs"].to(device), utt_B["inputs"].to(device)
+
+        utt_embed_A, utt_embed_B = \
+            get_encoder_feats(model, cfg.model.name, feats_A, num_frames_A), \
+            get_encoder_feats(model, cfg.model.name, feats_B, num_frames_B)
+
+        # "only keep the embedding vectors that correspond to meaningful content in the original audio and remove the ones associated with the padded part."
+        utt_embed_A, utt_embed_B = slice_encoder_feats(utt_embed_A, num_frames_A), slice_encoder_feats(utt_embed_B, num_frames_B)
+        # remove the batch dim: (1, T, D) -> (T, D)
+        embed_A.append(utt_embed_A.squeeze(dim=0))
+        embed_B.append(utt_embed_B.squeeze(dim=0))
+
+    most_similar_utterance = retrieve_most_similar_utterance(embed_A, embed_B)
+    N_aligned_utt = len(embed_A)
+    retrieval_success = 0
+    # how many elements are on the diagonal of the source-target matrix?
+    for row_idx in range(N_aligned_utt):
+        # if the utterance in the target language with the same meaning as the source utterance 
+        #   has the the highest similarity to the source utterance,
+        #   then we retrieved the correct utterance
+        # note: this assumes for each index, source file A is semantically aligned/paired with source file B (i.e. they have the same meaning)
+        # thus the right answer is to predict the target utterance with the same index as the source index
+        if row_idx in most_similar_utterance[row_idx]:
+            retrieval_success += 1
+    # R @ 1
+    recall_rate = 100 * retrieval_success / N_aligned_utt
+    return recall_rate
 
 
 def save_retrieval_results(
