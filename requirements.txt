@@ -1,4 +1,5 @@
 lhotse
+pyyaml
 tqdm
 datasets
 huggingface_hub
