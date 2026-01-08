@@ -7,8 +7,7 @@ from pathlib import Path
 import re
 from typing import Dict, Set, Optional, Tuple
 
-import yaml
-from tqdm.notebook import tqdm
+from datasets import load_dataset, Dataset
 from lhotse import (
     validate_recordings_and_supervisions,
     CutSet
@@ -17,6 +16,8 @@ from lhotse.audio import Recording, RecordingSet
 from lhotse.qa import fix_manifests
 from lhotse.manipulation import combine
 from lhotse.supervision import SupervisionSegment, SupervisionSet
+from tqdm.notebook import tqdm
+import yaml
 
 
 def get_cities(corpus_dir):
@@ -78,7 +79,7 @@ def _parse_utterance(
         channel=0,
         language='Chinese', # can be overridden
         speaker='aaaaa',
-        text=text,
+        text=text,  # transcript and translation are added later
         custom={
             'city': site_name,
             'subgrouping': subgroup
@@ -88,24 +89,34 @@ def _parse_utterance(
     return recording, segment
 
 
+def index_by_city(dataset):
+    city_index = defaultdict(list)
+    for ex in dataset:
+        city = ex["utt_id"][:5]
+        city_index[city].append(ex)
+    return city_index
+
+
 def _prepare_city(
     corpus_dir,
-    site_id,
     site_name,
+    utterances
 ) -> Tuple[CutSet, CutSet]:
     """
     Generate audio metadata for all ~50 utterances in a site
     """
     recordings, supervisions = [], []
 
-    with open(f"{corpus_dir}/{site_id}.json", 'r') as f:
-        site_data = json.load(f)
+    for ex in utterances:
+        sentence_id = ex["utterance_id"]
+        subgrouping = ex["subgrouping"]
+        dialect_transcript = ex["transcript"]
+        mandarin_translation = ex["translation"]
 
-    for sentence_id, sentence in site_data["sentences"].items():
-        recording, supervision = _parse_utterance(corpus_dir, sentence_id, '', site_name, site_data["subgrouping"])
+        recording, supervision = _parse_utterance(corpus_dir, sentence_id, '', site_name, subgrouping)
         recordings.append(recording)
 
-        transcript, translation = text_normalize_chinese(sentence["transcript"]), text_normalize_chinese(sentence["translation"])
+        transcript, translation = text_normalize_chinese(dialect_transcript), text_normalize_chinese(mandarin_translation)
         supervision.text = transcript
         supervision.translation = translation
         supervisions.append(supervision)
@@ -121,7 +132,7 @@ def _prepare_city(
 def prepare_yubao(
     corpus_dir: PathLike,
     manual_list: Dict[str, Set[str]],
-    sitename_to_id: Dict[str, str],
+    utterance_metadata: Dataset,
     output_dir: Optional[PathLike] = None,
 ):
     """
@@ -139,11 +150,11 @@ def prepare_yubao(
 
     cuts = []
     groups = {}
+    city2utterances = index_by_city(utterance_metadata)
     for subgroup, subgroup_set in tqdm(sorted(manual_list.items())):
         for site_name in tqdm(sorted(subgroup_set)):
-            site_id = sitename_to_id[site_name]
-
-            cutset = _prepare_city(corpus_dir, site_id, site_name)
+            utterances = city2utterances[site_name]
+            cutset = _prepare_city(corpus_dir, site_name, utterances)
 
             if subgroup not in groups:
                 groups[subgroup] = [cutset]
@@ -248,49 +259,10 @@ def get_sentence_id(cut, corpus):
     return sentence_id
 
 
-def align_yubao(source_cutset, target_cutset, corpus):
-    """
-    Generates paired utterances for retrieval, aligning based on sentence ID
-
-    Assumes both source_cutset and target_cutset consist of multiple cities,
-    where each city has ~ 50 sentences
-
-    e.g. one dataset consists of multiple Wu varieties (~50 sent. each), another dataset consists of multiple Min varieties (~50 sent. each)
-
-    Aligns using the sentence ID
-
-    Returns:
-    - Dict[str, Tuple[CutSet, CutSet]], a mapping from city to a pair of aligned source and target utterances
-    """
-    source_city_id_cut, target_city_id_cut = defaultdict(dict), defaultdict(dict)
-    for cut in source_cutset:
-        sentence_id = get_sentence_id(cut, corpus)
-        city = cut.supervisions[0].custom['city']
-        source_city_id_cut[city][sentence_id] = cut
-    for cut in target_cutset:
-        sentence_id = get_sentence_id(cut, corpus)
-        city = cut.supervisions[0].custom['city']
-        target_city_id_cut[city][sentence_id] = cut
-
-    aligned_pairs = {}
-    for src_city, src_ids in source_city_id_cut.items():
-        for trg_city, trg_ids in target_city_id_cut.items():
-            aligned_src, aligned_trg = [], []
-            for trg_cut_id in trg_ids:
-                # Only include an utterance if it appears in both the source and the target
-                # Important b/c some sites in YuBao won't have 50 sentences
-                if trg_cut_id in src_ids:
-                    aligned_src.append(src_ids[trg_cut_id])
-                    aligned_trg.append(trg_ids[trg_cut_id])
-            assert len(aligned_src) == len(aligned_trg)
-            aligned_pairs[(src_city, trg_city)] = (CutSet.from_cuts(aligned_src), CutSet.from_cuts(aligned_trg))
-    return aligned_pairs
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Assemble the retrieval dataset.")
     parser.add_argument("--audio_dir", help="The directory where the audio files are located.")
-    parser.add_argument("--rerun",  help="The name of the user.")
+    parser.add_argument("--hf_cache_dir",  help="HuggingFace cache directory.")
     args = parser.parse_args()
     BASE_DIR = args.audio_dir
 
@@ -307,13 +279,11 @@ if __name__ == "__main__":
     # all subgroups have the same number of cities
     assert len(set([len(manual_site_list[subgroup]) for subgroup in manual_site_list if subgroup != 'zh_standard' ])) == 1
     # to update: siteid_to_name = get_cities(BASE_DIR)
-    with open(f'siteid_to_name.json', 'r', encoding='utf-8') as f:
-        siteid_to_name = json.load(f)
-    sitename_to_id = { site_name: site_id for site_id, site_name in siteid_to_name.items() }
+    # with open(f'siteid_to_name.json', 'r', encoding='utf-8') as f:
+    #     siteid_to_name = json.load(f)
+    # sitename_to_id = { site_name: site_id for site_id, site_name in siteid_to_name.items() }
+    utterance_metadata = load_dataset("kalbin/yubao_videos", cache_dir=args.hf_cache_dir)
 
-    # generate cutsets
-    cuts = prepare_yubao('scraped', manual_site_list, sitename_to_id, 'cutsets')
+    # generate cutsets and save to cutsets/
+    cuts = prepare_yubao(args.audio_dir, manual_site_list, utterance_metadata, 'cutsets')
     logging.info(cuts.describe())
-
-    # run retrieval using a pair of CutSets between two dialect subgroups
-    # aligned_cuts = align_yubao(cutset_groupA, cutset_groupB, "yubao")
