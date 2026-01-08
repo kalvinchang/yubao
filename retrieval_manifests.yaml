@@ -1,0 +1,24 @@
+- name: yubao_standard_mandarin
+  manifest: cutsets/zh_standard-yubao.jsonl.gz
+
+# Use subgroup cuts. we will average retrieval performance across each city within a subgroup
+- name: yubao_dialect_min
+  manifest: cutsets/min-yubao.jsonl.gz
+
+- name: yubao_dialect_wuu
+  manifest: cutsets/wuu-yubao.jsonl.gz
+
+- name: yubao_dialect_hak
+  manifest: cutsets/hak-yubao.jsonl.gz
+
+- name: yubao_dialect_yue
+  manifest: cutsets/yue-yubao.jsonl.gz
+
+- name: yubao_dialect_hsn
+  manifest: cutsets/hsn-yubao.jsonl.gz
+
+- name: yubao_dialect_gan
+  manifest: cutsets/gan-yubao.jsonl.gz
+
+- name: yubao_dialect_mandarin
+  manifest: cutsets/zh_dialect-yubao.jsonl.gz

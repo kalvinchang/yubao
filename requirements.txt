@@ -1,3 +1,9 @@
 lhotse
 tqdm
 datasets
+huggingface_hub
+hydra
+omegaconf
+numpy
+torch
+scikit-learn

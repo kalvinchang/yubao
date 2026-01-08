@@ -18,10 +18,9 @@ retrieval() {
         python retrieval.py ++exp_dir=MODEL_DIR \
             # where the results will be stored
             hydra.run.dir=retrieval/${corpus}_${src}_${trg} \
-            inference.use_averaged_model=False \
-            ++inference.pretrained_model=CHECKPOINT_NAME.pt \
-            ++model.name=zipformer \
-            ++data.test_data_config=configs/test_data_dialect_retrieval_config.yaml \
+            ++inference.pretrained_model=PATH/TO/CHECKPOINT.pt \
+            ++model.feats=fbank \
+            ++data.test_data_config=retrieval_manifests.yaml \
             ++retrieval.source=${corpus}_${src} \
             ++retrieval.target=${corpus}_${trg}
     ) &
