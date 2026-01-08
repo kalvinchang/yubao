@@ -64,7 +64,7 @@ To create the retrieval dataset, you must first download the metadata and videos
 * ```pip install -r requirements.txt```
 * ```bash
     export HF_HUB_CACHE="/path/to/your/hf_cache
-    hf download kalbin/yubao_sites
+    hf download kalbin/yubao_sites --repo-type dataset
   ```
 
 ### Downloading the videos
