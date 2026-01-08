@@ -6,11 +6,10 @@ from typing import Dict, List
 
 import hydra
 from hydra.core.hydra_config import HydraConfig
-import numpy as np
 import torch
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from omegaconf import DictConfig, OmegaConf
-from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
 
 from lhotse import CutSet, Fbank, FbankConfig
@@ -28,6 +27,63 @@ def load_model(model_path):
 
 def get_encoder_feats(model, model_name, feats, num_frames):
     raise NotImplementedError('Implement method to load your speech encoder embeddings here')
+
+
+def slice_encoder_feats(encoder_feats, num_frames):
+    # no slicing needed for Zipformer or TeleSpeech b/c we didn't pad the input
+    # return encoder_feats
+
+    # but if we did pad the input to the encoder
+    # then we can slice the encoder features to remove embeddings corresponding to padding
+    # encoder_feats: (batch size, T, C)
+    # divide by 4 since Zipformer downsamples from 100 Hz to 25 Hz (Zipformer Figure 1)
+    raise NotImplementedError('Implement method to slice encoder features if you implemented padding')
+
+
+"""
+SeqSim - BERTScore (Zhang et al. 2020) adapted for speech embeddings (Ma et al. 2025)
+
+Measures the similarity between 2 speech utterances, computing frame-level similarity
+
+src: T1 x D
+trg: T2 x D
+T1/T2 is the duration of the source/target in encoder frames, D is the embedding dimension
+
+where src is treated as a hypothesis and trg, the reference, for the purposes of simulating precision and recall
+"""
+def seq_sim(src, trg):
+    # T1 x T2 - cosine similarity between all pairs of frames 
+    frame_similarity_matrix = F.cosine_similarity(src, trg, dim=1)
+    # for each elem in src, take the max over the trg dim then sum and normalize by # elems (src dim)
+    precision = torch.sum(torch.max(frame_similarity_matrix, dim=1)) / src.shape[0]
+    # for each elem in trg, take the max over the src dim then sum and normalize by # elems (trg dim)
+    recall = torch.sum(torch.max(frame_similarity_matrix, dim=0)) / trg.shape[0]
+
+    bert_score = 2 * precision * recall / (precision + recall)
+    return bert_score
+
+
+"""
+Given embeddings for paired source-target utterances,
+for each utterance, find the utterance in this corpus with the highest similarity (SeqSim) to the utterance
+
+src_emb: List[Tensor[T1, D]] of length N
+trg_emb: List[Tensor[T2, D]] of length N
+(N is the number of aligned utterances/~50, T1/T2 is the duration of the source/target in encoder frames, D is the embedding dimension)
+"""
+def retrieve_most_similar_utterance(src_utt_emb, trg_utt_emb):
+    assert len(src_utt_emb) == len(trg_utt_emb)
+    N = len(src_utt_emb)
+    utt_similarity_matrix = torch.zeros((N, N))
+
+    # for all pairs of utterances (not aligned), measure the sequence similarity
+    for src_idx in range(N):
+        for trg_idx in range(N):
+            utt_similarity_matrix[src_idx][trg_idx] = seq_sim(src_utt_emb[src_idx], trg_utt_emb[trg_idx])
+
+    # for each source utterance, find the target utterance with the highest similarity to the current utterance
+    most_similar_utterance = torch.argsort(utt_similarity_matrix, dim=1)[:, -1:]
+    return most_similar_utterance
 
 
 def save_retrieval_results(
