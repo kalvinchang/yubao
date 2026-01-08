@@ -1,4 +1,4 @@
-# 中國語言保護 Yubao
+# 中國語言保護 Yubao: A New Chinese Dialect Speech Benchmark
 
 The Chinese Language Resources Protection Project Collection and Display Platform (which we nickname Yubao / 語保 for short) has speech, dialect transcripts, phonetic (IPA) transcriptions, and Mandarin translations for 1,000 characters, 1,200 words, and 50 sentences, all of which are parallel (semantically aligned), across 1,300+ sites in China.
 
@@ -8,10 +8,15 @@ We thus measure the degree of cross-dialect semantic alignment of speech languag
 
 Our benchmark consists of 50 parallel spoken sentences across 78 sites, spanning the seven major subgroups: Mandarin (including dialectal Mandarin), Yue, Min (Southern Min/Minnan for now), Hakka, Xiang, Wu, and Gan.
 
-
-
-Please cite the original Yubao dataset:
+Please cite our paper, the original Yubao dataset, and Ma et al. (2025) who originally proposed cross-lingual speech retrieval to measure crosslingual alignment of speech embeddings:
 ```
+@article{chang2026yubao,
+    author  = {Kalvin Chang and Yiwen Shao and Jiahong Li and Dong Yu},
+    title = {Towards Comprehensive Semantic Speech Embeddings for Chinese Dialects},
+    journal = {arXiv preprint arXiv: },
+    year = {2026}
+}
+
 @misc{yubao,
   author       = {{Centre for the Protection of Language Resources of China}},
   title        = {The Chinese Language Resources Protection Project Collection and Display Platform},
@@ -20,15 +25,38 @@ Please cite the original Yubao dataset:
   year         = 2023,
   annote       = ""
 }
+
+@inproceedings{ma-etal-2025-cross,
+    title = "Cross-Lingual Transfer Learning for Speech Translation",
+    author = "Ma, Rao  and
+      Qian, Mengjie  and
+      Fathullah, Yassir  and
+      Tang, Siyuan  and
+      Gales, Mark  and
+      Knill, Kate",
+    editor = "Chiruzzo, Luis  and
+      Ritter, Alan  and
+      Wang, Lu",
+    booktitle = "Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 2: Short Papers)",
+    month = apr,
+    year = "2025",
+    address = "Albuquerque, New Mexico",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.naacl-short.4/",
+    doi = "10.18653/v1/2025.naacl-short.4",
+    pages = "33--43",
+    ISBN = "979-8-89176-190-2",
+}
 ```
 
-Note: The audio or video copyrights belong to the Centre for the Protection of Language Resources of China.
+Note: The audio and video copyrights belong to the Centre for the Protection of Language Resources of China.
 
 
 ## Data
-We release the metadata for all Chinese dialects sites at:
+We release the metadata for all Chinese dialect sites at:
 * Site data (site name, subgrouping): https://huggingface.co/datasets/kalbin/yubao_sites
 * Video metadata (dialect transcript, Mandarin translation, IPA, English translation): https://huggingface.co/datasets/kalbin/yubao_videos
+    * For an example of how to preprocess the IPA, see https://github.com/b05102139/phonotactic-complexity-across-dialects/blob/main/data/min/preprocess_min.py#L14
 
 ## Retrieval benchmark
 To create the retrieval dataset, you must first download the metadata and videos, extract the audio, and then assemble the retrieval dataset.
@@ -59,15 +87,37 @@ Next, we create lhotse CutSets that will be loaded during retrieval
 
 * ```mkdir scraped```
     * Then move the audio to ```scraped```
+    * ```scraped``` should look like this, where audio files are located in scraped/SITE_NAME/UTT_ID.wav:
+        ```
+        scraped
+        ├── 上海_上海_上海
+        │   ├── 04G95mb01yf0001.mp4
+        │   ├── 04G95mb01yf0001.wav
+        │   ├── 04G95mb01yf0002.mp4
+        │   ├── 04G95mb01yf0002.wav
+        │   ├── 04G95mb01yf0003.mp4
+        │   ├── 04G95mb01yf0003.wav
+        │   ├── 04G95mb01yf0004.mp4
+        │   ├── 04G95mb01yf0004.wav
+        │   ├── 04G95mb01yf0005.mp4
+        │   ├── 04G95mb01yf0005.wav
+        │   ├── 04G95mb01yf0006.mp4
+        │   ├── 04G95mb01yf0006.wav
+        │   ├── 04G95mb01yf0007.mp4
+        │   ├── 04G95mb01yf0007.wav
+        │   ├── 04G95mb01yf0008.mp4
+        ...
+        ```
+        (the video/mp4 files will not be used)
 * ```mkdir cutsets```
     * This is where the lhotse CutSets will be stored
-* ```python assemble_bench.py --audio_dir scraped --hf_cache_dir /path/to/your/hf_cache``
+* ```python assemble_bench.py --audio_dir scraped --hf_cache_dir /path/to/your/hf_cache```
 
 
 ### Running speech-to-speech retrieval
-* ```retrieval.sh'''
+* ```retrieval.sh```
     * replace with your model path
-    * add code to load your model embeddingss here
+    * add code to load your model embeddingss here (see NotImplementedError)
 
 
 ## Site metadata
