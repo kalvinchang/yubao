@@ -7,13 +7,15 @@ Due to the non-standardization of Chinese dialect writing, Chinese dialect ASR m
 We thus measure the degree of cross-dialect semantic alignment of speech language models that support Chinese dialects.
 
 Our benchmark consists of 50 parallel spoken sentences across 78 sites, spanning the seven major subgroups: Mandarin (including dialectal Mandarin), Yue, Min (Southern Min/Minnan for now), Hakka, Xiang, Wu, and Gan.
+See [our paper](https://arxiv.org/abs/2601.07274) for more details.
 
-Please cite our paper, the original Yubao dataset, and Ma et al. (2025) who originally proposed cross-lingual speech retrieval to measure crosslingual alignment of speech embeddings:
+
+Please cite [our paper](https://arxiv.org/abs/2601.07274), the original Yubao dataset, and Ma et al. (2025) who originally proposed cross-lingual speech retrieval to measure crosslingual alignment of speech embeddings:
 ```
 @article{chang2026yubao,
     author  = {Kalvin Chang and Yiwen Shao and Jiahong Li and Dong Yu},
     title = {Towards Comprehensive Semantic Speech Embeddings for Chinese Dialects},
-    journal = {arXiv preprint arXiv: },
+    journal = {arXiv preprint arXiv:2601.07274},
     year = {2026}
 }
 
