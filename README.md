@@ -1,6 +1,6 @@
-# 中國語言保護 Yubao: A New Chinese Dialect Speech Benchmark
+# 中國語言保護 YuBao: A New Chinese Dialect Speech Benchmark
 
-The Chinese Language Resources Protection Project Collection and Display Platform (which we nickname Yubao / 語保 for short) has speech, dialect transcripts, phonetic (IPA) transcriptions, and Mandarin translations for 1,000 characters, 1,200 words, and 50 sentences, all of which are parallel (semantically aligned), across 1,300+ sites in China.
+The Chinese Language Resources Protection Project Collection and Display Platform (which we nickname YuBao / 語保 for short) has speech, dialect transcripts, phonetic (IPA) transcriptions, and Mandarin translations for 1,000 characters, 1,200 words, and 50 sentences, all of which are parallel (semantically aligned), across 1,300+ sites in China.
 
 We create a speech-to-speech retrieval benchmark to evaluate progress in speech technologies for Chinese dialects.
 Due to the non-standardization of Chinese dialect writing, Chinese dialect ASR may not be as useful as Chinese dialect to Mandarin speech-to-text translation.
@@ -10,7 +10,7 @@ Our benchmark consists of 50 parallel spoken sentences across 78 sites, spanning
 See [our paper](https://arxiv.org/abs/2601.07274) for more details.
 
 
-Please cite [our paper](https://arxiv.org/abs/2601.07274), the original Yubao dataset, and Ma et al. (2025) who originally proposed cross-lingual speech retrieval to measure crosslingual alignment of speech embeddings:
+Please cite [our paper](https://arxiv.org/abs/2601.07274), the original YuBao dataset, and Ma et al. (2025) who originally proposed cross-lingual speech retrieval to measure crosslingual alignment of speech embeddings:
 ```
 @article{chang2026yubao,
     author  = {Kalvin Chang and Yiwen Shao and Jiahong Li and Dong Yu},
@@ -123,7 +123,7 @@ Next, we create lhotse CutSets that will be loaded during retrieval
 
 
 ## Site metadata
-In case you want the latest version of yubao's site metadata:
+In case you want the latest version of YuBao's site metadata:
 * Install dependencies (```pip install ddddocr pandas retrying```)
 * ```python crawl.py EMAIL PASSWORD SAVE_DIRECTORY```
     * This will save metadata from each site
